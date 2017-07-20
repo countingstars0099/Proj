@@ -41,7 +41,7 @@
 <div id="flow">  <!--将js中加载的表格在这个div中现实-->
 </div>
 <style>
-.input{ margin:0 auto; width:1000px; height:600px;}
+.input{ margin:0 auto; width:1500px; height:600px;}
 </style>
 <div id="find" class="input">
 <input type="text" value="openflow:1" id="node_id" width= "50px"  style="height:40px;font-size:25px;">
@@ -56,8 +56,15 @@
 <input type="text" value="12" id="byte-count" width= "50px"  style="height:40px;font-size:25px;">
 -->
 <button onclick="putFlow()">Add</button>
+</div>
+
+<div id="delete" class="input">
+<input type="text" value="" id="node_id1" width= "50px" style="height:40px;font-size:25px;">
+<input type="text" value="" id="table_id1" width= "50px"  style="height:40px;font-size:25px;">
+<input type="text" value="" id="flow_id" width= "50px"  style="height:40px;font-size:25px;">
 <button onclick="deleteFlow()">Delete</button>
 </div>
+
 
 </body>
 </html>
@@ -70,8 +77,8 @@
 //getflow();
 })
 
-/*
-    function deleteFolw(){
+
+    function deleteFlow(){
 	var node_id=document.getElementById("node_id").value;
 	var table_id=document.getElementById("table_id").value;
 	var flow_id=document.getElementById("flow_id").value;
@@ -80,8 +87,10 @@
 	    url: "http://127.0.0.1:8000/deleteflow/" ,
 	    type:"POST",
 	    data:post_data,
-	    success:function(){
-		alert("success");
+	    success:function(data){
+		data=JSON.parse(data);
+		if(data["result1"]==1) alert("success");
+		
 		    //partflow=JSON.parse(partflow);
 		    //console.log(partflow);
 		},
@@ -89,7 +98,7 @@
 		alert("delete flow fail...");}
 	    })
     }
-*/
+
     function putFlow(){
 	var node_id=document.getElementById("node_id").value;
 	var table_id=document.getElementById("table_id").value;
@@ -114,8 +123,8 @@
 	    data:post_data,
 	    success:function(data){
 		data=JSON.parse(data);
-		if(data["result"]==1)
-		    alert("success");
+		if(data["result"]==1) alert("success");
+		    
 		    //console.log(data);
 		    //console.log(partflow);
 		},
