@@ -1,0 +1,270 @@
+<!--{% load staticfiles %}-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <style>
+        .link{
+            stroke:green;
+            stroke-width:3px;
+        }
+        #topoView svg{
+            border:black solid 1px;
+	    height:600px;
+	    width:1500px;
+        }
+
+        #topoView{
+            margin-top:10px;
+            margin-left:80px;
+            height:600px;
+            width:1500px;
+        }
+    </style>
+
+    <script src="http://d3js.org/d3.v4.min.js" charset="utf-8"></script>
+    <script src="../static/js/topoView.js"></script>
+    <script src="http://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+</head>
+<!--
+<body background="../static/img/back.jpg">
+-->
+<body style="background:#708090">
+    <p style="color:black;font-size:50px"><strong><em>拓扑展示&nbsp;&nbsp;&nbsp;&nbsp;</em>
+    <button onclick="getTopoData() " style="width:200px;height:60px;font-size:30px;background:blue;color:white"> Reload... </button></strong></p>
+    <div id="topoView" style="background:#FFF">
+        <svg>
+        </svg>
+    </div>
+<br/><br/><br/>
+<p style="color:black;font-size:50px"><strong><em>流表展示&nbsp;&nbsp;&nbsp;&nbsp;</em></strong>
+<button onclick="getflow()" style="width:200px;height:60px;font-size:30px;background:blue;color:white"> GetFlows </button></p>
+<div id="flow">  <!--将js中加载的表格在这个div中现实-->
+</div>
+<style>
+.input{ margin:0 auto; width:1000px; height:600px;}
+</style>
+<div id="find" class="input">
+<input type="text" value="openflow:1" id="node_id" width= "50px"  style="height:40px;font-size:25px;">
+<input type="text" value="0" id="table_id" width= "50px"  style="height:40px;font-size:25px;">
+<input type="text" value="" id="flow_id" width= "50px"  style="height:40px;font-size:25px;">
+<input type="text" value="124" id="cookie" width= "50px"  style="height:40px;font-size:25px;">
+<input type="text" value="101" id="priority" width= "50px"  style="height:40px;font-size:25px;">
+<!--
+<input type="text" value="21" id="second" width= "50px"  style="height:40px;font-size:25px;">
+<input type="text" value="82" id="nasosecond" width= "50px"  style="height:40px;font-size:25px;">
+<input type="text" value="12" id="packet-count" width= "50px"  style="height:40px;font-size:25px;">
+<input type="text" value="12" id="byte-count" width= "50px"  style="height:40px;font-size:25px;">
+-->
+<button onclick="putFlow()">Add</button>
+<button onclick="deleteFlow()">Delete</button>
+</div>
+
+</body>
+</html>
+
+
+<script>
+
+    $(function(){    //静态页面加载完毕自动执行内部内容（用于查看方便）
+//getTopoData();
+//getflow();
+})
+
+/*
+    function deleteFolw(){
+	var node_id=document.getElementById("node_id").value;
+	var table_id=document.getElementById("table_id").value;
+	var flow_id=document.getElementById("flow_id").value;
+	var post_data={"node_id1":node_id,"table_id1":table_id,"flow_id1":flow_id};
+	$.ajax({
+	    url: "http://127.0.0.1:8000/deleteflow/" ,
+	    type:"POST",
+	    data:post_data,
+	    success:function(){
+		alert("success");
+		    //partflow=JSON.parse(partflow);
+		    //console.log(partflow);
+		},
+	    error:function(){
+		alert("delete flow fail...");}
+	    })
+    }
+*/
+    function putFlow(){
+	var node_id=document.getElementById("node_id").value;
+	var table_id=document.getElementById("table_id").value;
+	var flow_id=document.getElementById("flow_id").value;
+	var cookie=document.getElementById("cookie").value;
+	var priority=document.getElementById("priority").value;
+	console.log(node_id);
+	console.log(table_id);
+	console.log(flow_id);
+	console.log(cookie);
+	/*var second=document.getElementById("second").value;
+	var nasosecond=document.getElementById("nasosecond").value;
+	var packet_count=document.getElementById("packet-count").value;
+	var byte_count=document.getElementById("byte-count").value;
+*/
+
+	var post_data={"node_id":node_id,"table_id":table_id,"flow_id":flow_id,"cookie":cookie,"priority":priority,};
+	console.log(post_data);
+	$.ajax({
+	    url: "http://127.0.0.1:8000/putflow/" ,
+	    type:"POST",
+	    data:post_data,
+	    success:function(data){
+		data=JSON.parse(data);
+		if(data["result"]==1)
+		    alert("success");
+		    //console.log(data);
+		    //console.log(partflow);
+		},
+	    error:function(){
+		alert("Add flow fail...");}
+	    })
+    }
+
+//获取后台返回的流表信息
+    function getflow(){
+	$.ajax({
+	    type:"GET",
+	    url: "http://127.0.0.1:8000/getflow/",
+	    dataType: "json",
+	    async:true,
+	    success: function(flow){
+			console.log(flow);
+			analyse_flow(flow);
+			},
+	    error:function(){
+		alert("getFlows fail...");}
+	});
+    }
+
+
+    function analyse_flow(flow){  //流表信息分析并展示
+	var nodes=[];
+	var flows=[];
+        var node_list=flow["nodes"]["node"];
+	//var str="<div><table border='1' cellpadding='2' cellspacing='0' >";
+	var str="<div><style>table,table tr th, table tr td { border:2px solid #000000; }table { width: 1700px; min-height: 50px; line-height: 50px; text-align: center; border-collapse: collapse;}  </style><table align='center' style='font-size:30px;'>";
+	str+="<tr><td bgcolor=lightyellow>"+"nodeID"+"</td><td bgcolor=lightyellow>"+"tableID"+"</td><td bgcolor=lightyellow>"+"flowID"+"</td><td bgcolor=lightyellow>"+"flowCookie"+"</td><td bgcolor=lightyellow>"+"flowPriority"+"</td><td bgcolor=lightyellow>"+"byte-count"+"</td><td bgcolor=lightyellow>"+"nanoSecond"+"</td><td bgcolor=lightyellow>"+"Second"+"</td><td bgcolor=lightyellow>"+"packet-count"+"</td></tr>";
+	for(var i=0;i<node_list.length;i++){
+	    var a=node_list[i]["id"];
+	    alert(a);   //节点ID
+	    nodes.push(a);
+	    var table=node_list[i]["flow-node-inventory:table"];
+	    for( var j=0;j<table.length;j++){
+		var c=table[j]["id"];  //table ID
+		if(c == 0){
+		    //alert(c);
+		    var flow_list=table[j]["flow"];
+		    for(var k=0;k<flow_list.length;k++){
+			//console.log(flow_list[k]);
+			var b=flow_list[k]["id"];  //流表ID
+			var d=flow_list[k]["cookie"];  //流表cookie
+			var e=flow_list[k]["priority"];  //流表Priority
+			var dura=flow_list[k]["opendaylight-flow-statistics:flow-statistics"];
+			var bc = dura["byte-count"];  //流表bytecount
+			var pc = dura["packet-count"];  //流表packetcount
+			var ns = dura["duration"]["nanosecond"];  //流表nonasecond
+			var sec= dura["duration"]["second"];  //流表second
+		        //alert(b);
+			str+="<tr><td bgcolor=lightyellow>"+a+"</td><td bgcolor=lightyellow>"+c+"</td><td bgcolor=lightyellow>"+b+"</td><td bgcolor=lightyellow>"+d+"</td><td bgcolor=lightyellow>"+e+"</td><td bgcolor=lightyellow>"+bc+"</td><td bgcolor=lightyellow>"+ns+"</td><td bgcolor=lightyellow>"+sec+"</td><td bgcolor=lightyellow>"+pc+"</td></tr>";
+		    }
+		}
+	    }
+	}
+	str+="</table></div>";
+	document.getElementById("flow").innerHTML = str;
+    }
+
+
+    function getTopoData(){   //获取后台返回的拓扑信息
+         $.ajax({
+             type: "GET",
+             url: "http://127.0.0.1:8000/getTopo/",
+             dataType: "json",
+	     async:true,
+             success: function(r){
+                         console.log(r);
+                         analyse(r)
+                      },
+	    error:function(){
+		alert("getTopo fail...");
+		}
+         });
+    }
+
+
+    function analyse(r){    //分析拓扑信息
+        var topoObj=r["network-topology"]["topology"][0];
+        var linkList=topoObj["link"];
+        var nodeList=topoObj["node"];
+	//alert(linkList[0]["link-id"]);
+	//alert(nodeList[0]["node-id"]);
+	var snodes=[];
+	var hnodes=[];
+	var links=[];
+
+	for(var i=0;i<linkList.length;i++){
+	    var a=linkList[i]["destination"]["dest-node"];
+	    var b=linkList[i]["source"]["source-node"];
+	    var m={"source":b,"target":a}
+	    links.push(m);
+	}
+
+
+	for(var i=0;i<nodeList.length;i++){
+	    var m=nodeList[i]["node-id"];
+	    var a={"id":m};
+	    if(m.indexOf("openflow")>=0){
+		snodes.push(a);
+	    }
+	    else{
+                
+		hnodes.push(a);
+	    }
+
+	}
+	var topoView = new TopoView("topoView");
+        topoView.setTopoInfo(snodes, hnodes, links);
+        topoView.updateTopoView();
+	}
+</script>
+
+
+<!--
+<script>
+    var snodes = [{
+        "id": "1"
+    }, {
+        "id": "2"
+    }, {
+        "id": "3"
+    }];
+    var hnodes = [{
+        "id": "5"
+    }, {
+        "id": "6"
+    }];
+
+    var links = [{
+        "source": "1",
+        "target": "2"
+    }, {
+        "source": "2",
+        "target": "3"
+    }, {
+        "source": "5",
+        "target": "1"
+    }, {
+        "source": "6",
+        "target": "3"
+    }]
+    var topoView = new TopoView("topoView");
+    topoView.setTopoInfo(snodes, hnodes, links);
+    topoView.updateTopoView();
+
+
+</script>
+-->
